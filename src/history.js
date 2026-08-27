@@ -3,20 +3,20 @@ const MAX_COMMANDS = 20;
 const commandQueue = [];
 let nextCommandId = 1;
 
-export function addCommand(command,output="",error="",exitCode=0){
-
-    if (commandQueue.length >= MAX_COMMANDS){
+export function addCommand(path, command, output = "") {
+    if (commandQueue.length >= MAX_COMMANDS) {
         commandQueue.shift();
     }
 
-    commandQueue.push({
-        id:nextCommandId++,
+    const entry = {
+        id: nextCommandId++,
+        path,
         command,
-        output,
-        error,
-        exitCode,
-        timestamp: new Date().toDateString()
-    });
+        output
+    };
+
+    commandQueue.push(entry);
+    return entry;
 }
 
 export function getHistory() {

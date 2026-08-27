@@ -1,5 +1,5 @@
 import pty from "node-pty";
-import { saveCap } from "./pty-capture-writer.js";
+import { saveCap } from "./test/pty-capture-writer.js";
 
 const shell = pty.spawn("powershell.exe",
     [],
