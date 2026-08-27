@@ -16,18 +16,35 @@ export function detectCommands(capData) {
         const start = promptRegex.lastIndex;
 
         const nextPrompt = promptRegex.exec(clean);
-        const end = nextPrompt
-            ? nextPrompt.index
-            : clean.length;
+        const end = nextPrompt ? nextPrompt.index : clean.length;
 
-        const commandBlock = clean.slice(start, end).trim();
+        let block = clean.slice(start, end);
 
-        if (commandBlock) {
-            commands.push({
-                path: match[1],
-                command: commandBlock
-            });
+        // Remove PowerShell continuation prompts
+        block = block.replace(/^>>\s?/gm, "");
+
+        const lines = block.split(/\r?\n/);
+
+        // Remove empty lines
+        while (lines.length && !lines[0].trim()) {
+            lines.shift();
         }
+
+        if (!lines.length) {
+            if (!nextPrompt) break;
+            promptRegex.lastIndex = nextPrompt.index;
+            continue;
+        }
+
+        const command = lines.shift().trim();
+
+        const output = lines.join("\r\n").trim();
+
+        commands.push({
+            path: match[1],
+            command,
+            output
+        });
 
         if (!nextPrompt) break;
 
