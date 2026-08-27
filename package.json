@@ -17,8 +17,10 @@
   "author": "",
   "license": "MIT",
   "type": "module",
-
-  "bin":{
+  "bin": {
     "capter": "./src/cli.js"
+  },
+  "dependencies": {
+    "node-pty": "^1.1.0"
   }
 }

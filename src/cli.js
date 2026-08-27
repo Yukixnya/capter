@@ -1,24 +1,17 @@
 #!/usr/bin/env node
 
-// console.log("capter running");
+// import { addCommand, getHistory } from "./history.js";
 
-// import { addCommand,getHistory } from "./history.js";
+// for (let i=1; i<=21; i++){
+//     addCommand(`command-${i}`,`output-${i}`);
+// }
 
-// addCommand(
-//     "node app.js",
-//     "Server is running at port 2000",
-//     "",
-//     0
-// );
+// const history = getHistory();
 
-// addCommand(
-//     "node test.js",
-//     "",
-//     "Error: Smt went wrong !",
-//     1
-// );
+// console.log("Stored Commands:",history.length);
+// console.log("First Command History:",history[0]);
+// console.log("Last Command History:",history[history.length-1]);
 
-// console.log(getHistory());
 
 
 import { startShell } from "./shell.js";
