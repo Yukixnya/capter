@@ -1,20 +1,14 @@
 import pty from "node-pty";
-import fs from "fs";
 import path from "path";
 import os from "os";
 import { addCommand, getHistory } from "./history.js";
+import { parseOutput } from "./parser.js";
+
 import { saveCap } from "../tests/pty-capture-writer.js";
 
 export function startShell() {
     const cols = process.stdout.columns || 120;
     const rows = process.stdout.rows || 30;
-
-    // Create temp file for command communication
-    const cmdFile = path.join(
-        os.tmpdir(),
-        `capter_cmds_${Date.now()}.txt`
-    );
-    fs.writeFileSync(cmdFile, "", "utf8");
 
     const shell = pty.spawn(
         "powershell.exe",
@@ -28,7 +22,7 @@ export function startShell() {
             cols,
             rows,
             cwd: process.cwd(),
-            env: { ...process.env, CAPTER_CMD_FILE: cmdFile }
+            env: { ...process.env }
         }
     );
 
@@ -40,42 +34,52 @@ export function startShell() {
     });
 
     let capData = "";
-    let processedLines = 0;
-
-    // Current entry being tracked — output appended as data arrives
-    let currentEntry = null;
+    let outputBuffer = "";
+    let isFirstTime = true;
 
     shell.onData((data) => {
+        // Write directly to terminal. The OSC marker is an invisible control code, 
+        // so the terminal will swallow it silently.
         process.stdout.write(data);
+        
         capData += data;
+        outputBuffer += data;
 
-        // Check for new commands from the temp file.
-        // The prompt function writes AFTER execution, so by the
-        // time we see the prompt data the file is already updated.
-        try {
-            const content = fs.readFileSync(cmdFile, "utf8");
-            const lines = content
-                .split(/\r?\n/)
-                .filter(Boolean);
+        // Our custom OSC sequence looks like: \x1B]1337;Custom=CapterMarker:BASE64\x07
+        const markerRegex = /\x1B\]1337;Custom=CapterMarker:([A-Za-z0-9+/=]+)\x07/g;
+        
+        let match;
+        let lastMatchEndIndex = 0;
 
-            for (let i = processedLines; i < lines.length; i++) {
-                const raw = lines[i].trim();
-                const sep = raw.indexOf("|");
-                const cmdPath = raw.slice(0, sep);
-                const command = raw.slice(sep + 1);
+        // Loop through all markers found in the current buffer
+        while ((match = markerRegex.exec(outputBuffer)) !== null) {
+            const base64Data = match[1];
+            const decoded = Buffer.from(base64Data, 'base64').toString('utf8');
+            
+            const sep = decoded.indexOf("|");
+            const cmdPath = decoded.slice(0, sep);
+            const cmdText = decoded.slice(sep + 1);
+            
+            // The visual output for this command is everything in the buffer
+            // up to the start of this marker.
+            const chunk = outputBuffer.slice(lastMatchEndIndex, match.index);
 
-                // Start a new entry — future data goes here
-                currentEntry = addCommand(cmdPath, command);
+            if (isFirstTime) {
+                isFirstTime = false;
+            } else {
+                const parsedOutput = parseOutput(chunk);
+    
+                addCommand(cmdPath, cmdText, parsedOutput);
+                // addCommand(cmdPath, cmdText, chunk);
             }
 
-            processedLines = lines.length;
-        } catch {
-            // File might be locked momentarily
+
+            lastMatchEndIndex = markerRegex.lastIndex;
         }
 
-        // Append this chunk to the active command
-        if (currentEntry) {
-            currentEntry.output += data;
+        // Keep the rest of the buffer for the next command
+        if (lastMatchEndIndex > 0) {
+            outputBuffer = outputBuffer.slice(lastMatchEndIndex);
         }
     });
 
@@ -87,12 +91,6 @@ export function startShell() {
     });
 
     shell.onExit(({ exitCode }) => {
-        try {
-            fs.unlinkSync(cmdFile);
-        } catch {
-            // Best-effort cleanup
-        }
-
         saveCap(capData, exitCode);
 
         process.stdin.setRawMode(false);
