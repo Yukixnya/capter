@@ -21,6 +21,7 @@
     "capter": "./src/cli.js"
   },
   "dependencies": {
+    "canvas": "^3.2.3",
     "node-pty": "^1.1.0"
   }
 }

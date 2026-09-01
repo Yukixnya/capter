@@ -1,10 +1,8 @@
 import pty from "node-pty";
-import path from "path";
-import os from "os";
 import { addCommand, getHistory } from "./history.js";
-import { parseOutput } from "./parser.js";
+import { buildTerminal, parseOutput } from "./parser.js";
 
-import { saveCap } from "../tests/pty-capture-writer.js";
+import { saveCap, saveHistory } from "../utility/saveTemp.js";
 
 export function startShell() {
     const cols = process.stdout.columns || 120;
@@ -33,6 +31,7 @@ export function startShell() {
         );
     });
 
+
     let capData = "";
     let outputBuffer = "";
     let isFirstTime = true;
@@ -41,13 +40,13 @@ export function startShell() {
         // Write directly to terminal. The OSC marker is an invisible control code, 
         // so the terminal will swallow it silently.
         process.stdout.write(data);
-        
+
         capData += data;
         outputBuffer += data;
 
         // Our custom OSC sequence looks like: \x1B]1337;Custom=CapterMarker:BASE64\x07
         const markerRegex = /\x1B\]1337;Custom=CapterMarker:([A-Za-z0-9+/=]+)\x07/g;
-        
+
         let match;
         let lastMatchEndIndex = 0;
 
@@ -55,11 +54,11 @@ export function startShell() {
         while ((match = markerRegex.exec(outputBuffer)) !== null) {
             const base64Data = match[1];
             const decoded = Buffer.from(base64Data, 'base64').toString('utf8');
-            
+
             const sep = decoded.indexOf("|");
             const cmdPath = decoded.slice(0, sep);
             const cmdText = decoded.slice(sep + 1);
-            
+
             // The visual output for this command is everything in the buffer
             // up to the start of this marker.
             const chunk = outputBuffer.slice(lastMatchEndIndex, match.index);
@@ -67,9 +66,16 @@ export function startShell() {
             if (isFirstTime) {
                 isFirstTime = false;
             } else {
-                const parsedOutput = parseOutput(chunk);
-    
-                addCommand(cmdPath, cmdText, parsedOutput);
+
+                const terminal = buildTerminal(chunk);
+
+                addCommand(cmdPath, cmdText, {
+                    raw: chunk,
+                    parsed: parseOutput(chunk),
+                    terminal
+                });
+
+                // addCommand(cmdPath, cmdText, terminal);
                 // addCommand(cmdPath, cmdText, chunk);
             }
 
@@ -87,6 +93,15 @@ export function startShell() {
     process.stdin.resume();
 
     process.stdin.on("data", (data) => {
+        // const command = data.toString().trim();
+
+        // if (command === "capter exit") {
+        //     console.log("Exiting capter ...");
+        //     stopShell(shell);
+        //     console.log("Capter is Deactivated.");
+        //     return;
+        // }
+
         shell.write(data);
     });
 
@@ -100,8 +115,15 @@ export function startShell() {
         );
 
         console.log("\nHistory:");
+        // console.log(getHistory());
         console.log(getHistory());
+        saveHistory();
 
         process.exit(exitCode);
     });
+}
+
+
+export function stopShell(shell) {
+    shell.kill();
 }

@@ -1,11 +1,15 @@
 import fs from "fs";
+import os from "os";
+import path from "path";
 import { getHistory } from "../src/history.js";
 
+const capterTemp = path.join(os.tmpdir(), "capter");
+
 export function saveCap(data, exitCode) {
-    fs.mkdirSync("./temp", { recursive: true });
+    fs.mkdirSync(capterTemp, { recursive: true });
 
     fs.writeFileSync(
-        "./temp/pty-capture.json",
+        path.join(capterTemp, "pty-capture.json"),
         JSON.stringify({
             exitCode,
             capData: data
@@ -15,10 +19,10 @@ export function saveCap(data, exitCode) {
 }
 
 export function saveHistory() {
-    fs.mkdirSync("./temp", { recursive: true });
+    fs.mkdirSync(capterTemp, { recursive: true });
 
     fs.writeFileSync(
-        "./temp/history.json",
+        path.join(capterTemp, "history.json"),
         JSON.stringify(getHistory(), null, 2),
         "utf8"
     );
