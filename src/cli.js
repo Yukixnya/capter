@@ -3,6 +3,8 @@
 import { startShell, stopShell } from "./shell.js";
 import { showHelp } from "./commands/help.js";
 import { getListCommands } from "./commands/list.js";
+import { clearCapterData } from "./commands/flush.js";
+import { capTerminal } from "./commands/cap.js";
 
 const args = process.argv.slice(2);
 
@@ -23,11 +25,11 @@ switch (args[0]) {
         showHelp();
         break;
 
-    case "exit":
-        console.log("Exiting capter ...");
-        stopShell(shell);
-        console.log("Capter is Deactivated.");
-        break
+    // case "exit":
+    //     console.log("Exiting capter ...");
+    //     stopShell(shell);
+    //     console.log("Capter is Deactivated.");
+    //     break
 
     case "--version":
     case "-v":
@@ -36,6 +38,17 @@ switch (args[0]) {
 
     case "-ls":
         getListCommands();
+        break;
+
+    case "-flush":
+        clearCapterData();
+        break;
+
+    case "-cap":
+        if (args[1] === "-i"){
+            capTerminal(args[2]);
+        }
+        else console.log("Usage: capter -cap -i <id>");
         break;
 
     default:
