@@ -1,5 +1,5 @@
 {
-  "name": "capter",
+  "name": "capter-cli",
   "version": "1.0.0",
   "description": "Capture the terminal experience. Record interactive sessions and reconstruct them flawlessly as images.",
   "main": "index.js",
@@ -18,7 +18,7 @@
   "license": "MIT",
   "type": "module",
   "bin": {
-    "capter": "./src/cli.js"
+    "capter": "src/cli.js"
   },
   "dependencies": {
     "canvas": "^3.2.3",
