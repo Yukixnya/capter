@@ -76,5 +76,8 @@ export function buildTerminal(raw, cols = 120, rows = 30) {
         }
     }
 
+    // Shrink/expand height to fit exact content + 1 blank padding line
+    terminal.trim(1);
+
     return terminal;
 }

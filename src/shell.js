@@ -61,7 +61,26 @@ export function startShell() {
 
             // The visual output for this command is everything in the buffer
             // up to the start of this marker.
-            const chunk = outputBuffer.slice(lastMatchEndIndex, match.index);
+            let chunk = outputBuffer.slice(lastMatchEndIndex, match.index);
+
+            // Normalize absolute Y coordinates emitted by ConPTY (Y-Axis Shifter)
+            // This anchors every command's output back to row 1 on a fresh canvas.
+            const rowRegex = /\x1B\[(\d+);(\d+)H/g;
+            let minRow = Infinity;
+            let rowMatch;
+            
+            while ((rowMatch = rowRegex.exec(chunk)) !== null) {
+                const row = parseInt(rowMatch[1], 10);
+                if (row < minRow) minRow = row;
+            }
+            
+            if (minRow !== Infinity && minRow > 1) {
+                const offset = minRow - 1;
+                chunk = chunk.replace(/\x1B\[(\d+);(\d+)H/g, (fullMatch, rowStr, colStr) => {
+                    const newRow = parseInt(rowStr, 10) - offset;
+                    return `\x1B[${newRow};${colStr}H`;
+                });
+            }
 
             if (isFirstTime) {
                 isFirstTime = false;

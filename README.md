@@ -73,11 +73,11 @@ The main goal is to make terminal output **reproducible, structured, and visuall
 * ANSI color preservation
 * Cursor movement support
 * Terminal control sequence handling
-* Command history
-* Command IDs
+* Command history & Command IDs
 * Terminal state reconstruction
-* PNG rendering
-* Local rendering without external services
+* **ConPTY Cursor Normalization** (Immune to scroll-gap bugs)
+* **Dynamic Infinite Canvas** (Flawlessly captures 100+ line outputs in a single image)
+* PNG rendering (Local rendering without external services)
 * Temporary data management
 
 ---
@@ -263,9 +263,10 @@ The parsed operations are applied to a virtual terminal grid.
 
 Each terminal position represents a cell containing its character and display attributes.
 
-### 5. Rendering
+### 5. Dynamic Rendering
 
-The reconstructed terminal state is rendered locally into a PNG image.
+The reconstructed terminal state is analyzed to crop empty space and dynamically calculate the exact height required for the output. 
+It is then rendered locally into a perfectly-fitted PNG image.
 
 No external screenshot or rendering service is required.
 

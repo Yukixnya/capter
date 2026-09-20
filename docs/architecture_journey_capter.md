@@ -703,7 +703,30 @@ also preserving terminal color information from real PTY output.
 
 ------------------------------------------------------------------------
 
-## 32. Current Full Architecture
+## 32. ConPTY Cursor Normalization (Y-Axis Shifter)
+
+When testing rapid typing or large error outputs, ConPTY emitted absolute cursor positioning (`CUP`) sequences (e.g., `ESC[19;35H`). 
+Because these coordinates are tied to the live terminal's current row, rendering them on an isolated, empty canvas caused massive blank spaces at the top of the generated images.
+
+To solve this without breaking the ANSI format, a **Y-Axis Shifter** was implemented in `shell.js`:
+1. The parser scans the output chunk to find the *minimum* `Y` (row) value requested.
+2. It subtracts `(minRow - 1)` from every single `CUP` sequence in that chunk.
+
+This perfectly anchors every captured command output to Row 1, allowing for flawless, gapless image rendering.
+
+------------------------------------------------------------------------
+
+## 33. Infinite Dynamic Height & Cropping
+
+Terminal emulators normally have a fixed height (e.g., 30 rows). Large output triggers "scrolling", pushing older text out of the visible buffer.
+To capture 100-line error logs into a *single* continuous image:
+1. `TerminalState` was rewritten to dynamically push new rows (via `ensureRow()`) whenever `cursorY` exceeded the screen bounds, allowing infinite vertical expansion without scrolling.
+2. A `trim(1)` method was added to automatically crop out all empty grid rows at the end of execution.
+3. It intentionally leaves exactly **1 padding row** at the bottom for aesthetic layout.
+
+------------------------------------------------------------------------
+
+## 34. Current Full Architecture
 
 The current prototype architecture is:
 
