@@ -14,7 +14,7 @@ if (args.length === 0) {
 }
 
 switch (args[0]) {
-    case "capture":
+    case "record":
         console.log("Capter is Loading");
         startShell();
         console.log("Capter is Activated");

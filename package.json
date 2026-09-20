@@ -1,7 +1,7 @@
 {
   "name": "capter",
   "version": "1.0.0",
-  "description": "",
+  "description": "Capture the terminal experience. Record interactive sessions and reconstruct them flawlessly as images.",
   "main": "index.js",
   "scripts": {
     "start": "node src/cli.js",
